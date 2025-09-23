@@ -1,0 +1,431 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// =============================================
+// USER MANAGEMENT & AUTHENTICATION
+// =============================================
+
+model User {
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  avatar        String?
+  emailVerified DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  
+  // User preferences
+  preferences   UserPreferences?
+  
+  // Relationships
+  accounts      Account[]
+  sessions      Session[]
+  itineraries   Itinerary[]
+  feedback      Feedback[]
+  subscriptions Subscription[]
+  
+  @@map("users")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String  @map("user_id")
+  type              String
+  provider          String
+  providerAccountId String  @map("provider_account_id")
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+  @@map("accounts")
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique @map("session_token")
+  userId       String   @map("user_id")
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("sessions")
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+  @@map("verificationtokens")
+}
+
+// =============================================
+// USER PREFERENCES & PROFILE
+// =============================================
+
+model UserPreferences {
+  id                String   @id @default(cuid())
+  userId            String   @unique @map("user_id")
+  
+  // Travel preferences
+  preferredBudget   BudgetRange @default(MID_RANGE)
+  travelStyle       TravelStyle @default(BALANCED)
+  interests         String[]    // Array of interest categories
+  dietaryRequirements String[]  // vegetarian, vegan, gluten-free, etc.
+  mobilityRequirements String[] // wheelchair accessible, etc.
+  preferredLanguage String     @default("en")
+  currency          String     @default("USD")
+  
+  // Notification preferences
+  emailNotifications Boolean   @default(true)
+  pushNotifications  Boolean   @default(true)
+  
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("user_preferences")
+}
+
+// =============================================
+// ITINERARY MANAGEMENT
+// =============================================
+
+model Itinerary {
+  id            String   @id @default(cuid())
+  userId        String   @map("user_id")
+  
+  // Basic trip info
+  title         String
+  destination   String
+  country       String?
+  city          String?
+  coordinates   String?  // "lat,lng" format
+  
+  // Trip dates
+  startDate     DateTime @map("start_date")
+  endDate       DateTime @map("end_date")
+  duration      Int      // days
+  
+  // Trip details
+  budget        Float?
+  budgetRange   BudgetRange @default(MID_RANGE)
+  groupSize     Int      @default(1)
+  travelStyle   TravelStyle @default(BALANCED)
+  interests     String[] // categories
+  
+  // AI generation data
+  aiPrompt      String?  @db.Text
+  aiModel       String?  @default("gemini-pro")
+  generationTime Int?    // milliseconds
+  
+  // Itinerary content
+  summary       String?  @db.Text
+  highlights    String[] // key attractions/activities
+  estimatedCost Float?
+  
+  // Status
+  status        ItineraryStatus @default(DRAFT)
+  isPublic      Boolean  @default(false)
+  shareToken    String?  @unique // for public sharing
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relationships
+  user          User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  days          ItineraryDay[]
+  feedback      Feedback[]
+  
+  @@map("itineraries")
+}
+
+model ItineraryDay {
+  id           String   @id @default(cuid())
+  itineraryId  String   @map("itinerary_id")
+  
+  // Day info
+  dayNumber    Int      // 1, 2, 3, etc.
+  date         DateTime
+  title        String?  // "Day 1: Exploring Historic Tokyo"
+  summary      String?  @db.Text
+  
+  // Daily budget
+  estimatedCost Float?
+  
+  // Weather info (cached from API)
+  weather      Json?    // weather data for the day
+  
+  // Metadata
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relationships
+  itinerary    Itinerary @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
+  activities   Activity[]
+  
+  @@unique([itineraryId, dayNumber])
+  @@map("itinerary_days")
+}
+
+model Activity {
+  id            String   @id @default(cuid())
+  dayId         String   @map("day_id")
+  
+  // Activity details
+  title         String
+  description   String?  @db.Text
+  category      ActivityCategory
+  
+  // Location
+  location      String?  // address or location name
+  coordinates   String?  // "lat,lng"
+  placeId       String?  // Google Places ID
+  
+  // Timing
+  startTime     String?  // "09:00"
+  endTime       String?  // "11:00"
+  duration      Int?     // minutes
+  order         Int      // order within the day
+  
+  // Cost & Booking
+  estimatedCost Float?
+  currency      String   @default("USD")
+  bookingUrl    String?
+  bookingRequired Boolean @default(false)
+  
+  // Additional info
+  tips          String?  @db.Text
+  website       String?
+  phone         String?
+  rating        Float?   // from Google Places or similar
+  reviewCount   Int?
+  
+  // Status
+  isCompleted   Boolean  @default(false)
+  userNotes     String?  @db.Text
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relationships
+  day           ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  
+  @@map("activities")
+}
+
+// =============================================
+// FEEDBACK & ANALYTICS
+// =============================================
+
+model Feedback {
+  id           String   @id @default(cuid())
+  userId       String   @map("user_id")
+  itineraryId  String?  @map("itinerary_id")
+  
+  // Feedback content
+  rating       Int      // 1-5 stars
+  comment      String?  @db.Text
+  category     FeedbackCategory
+  
+  // Specific feedback areas
+  aiQuality    Int?     // 1-5 rating for AI recommendations
+  usability    Int?     // 1-5 rating for ease of use
+  accuracy     Int?     // 1-5 rating for information accuracy
+  
+  // Suggestions
+  improvements String[] // areas for improvement
+  
+  // Metadata
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  
+  // Relationships
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  itinerary    Itinerary? @relation(fields: [itineraryId], references: [id], onDelete: SetNull)
+  
+  @@map("feedback")
+}
+
+// =============================================
+// SUBSCRIPTION & BILLING
+// =============================================
+
+model Subscription {
+  id                String    @id @default(cuid())
+  userId            String    @map("user_id")
+  
+  // Subscription details
+  planType          PlanType
+  status            SubscriptionStatus
+  
+  // Billing
+  stripeCustomerId  String?   @unique @map("stripe_customer_id")
+  stripeSubscriptionId String? @unique @map("stripe_subscription_id")
+  stripePriceId     String?   @map("stripe_price_id")
+  
+  // Usage tracking
+  itinerariesUsed   Int       @default(0)
+  itinerariesLimit  Int       @default(5)
+  
+  // Dates
+  startDate         DateTime  @default(now()) @map("start_date")
+  endDate           DateTime? @map("end_date")
+  canceledAt        DateTime? @map("canceled_at")
+  
+  // Metadata
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // Relationships
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("subscriptions")
+}
+
+// =============================================
+// CACHED DATA & PERFORMANCE
+// =============================================
+
+model CachedLocation {
+  id            String   @id @default(cuid())
+  
+  // Location identifiers
+  name          String
+  country       String
+  city          String?
+  placeId       String?  @unique
+  coordinates   String?  // "lat,lng"
+  
+  // Cached data
+  placesData    Json?    // Google Places API response
+  weatherData   Json?    // Weather API response
+  popularTimes  Json?    // Popular times data
+  
+  // Cache metadata
+  lastUpdated   DateTime @default(now())
+  expiresAt     DateTime
+  hitCount      Int      @default(0)
+  
+  @@map("cached_locations")
+}
+
+model AiUsage {
+  id            String   @id @default(cuid())
+  userId        String?  @map("user_id")
+  
+  // Request details
+  model         String   // gemini-pro, gpt-3.5-turbo, etc.
+  promptTokens  Int?
+  responseTokens Int?
+  totalTokens   Int?
+  
+  // Cost tracking
+  cost          Float?   // in USD
+  
+  // Request metadata
+  endpoint      String?  // which API endpoint was used
+  responseTime  Int?     // milliseconds
+  success       Boolean  @default(true)
+  errorMessage  String?
+  
+  // Metadata
+  createdAt     DateTime @default(now())
+  
+  @@map("ai_usage")
+}
+
+// =============================================
+// ENUMS
+// =============================================
+
+enum BudgetRange {
+  ULTRA_BUDGET  // < $50/day
+  BUDGET        // $50-100/day
+  MID_RANGE     // $100-200/day
+  LUXURY        // $200-500/day
+  ULTRA_LUXURY  // > $500/day
+}
+
+enum TravelStyle {
+  ADVENTURE
+  CULTURAL
+  RELAXED
+  FOODIE
+  NIGHTLIFE
+  FAMILY
+  ROMANTIC
+  BUSINESS
+  SOLO
+  BALANCED
+}
+
+enum ActivityCategory {
+  SIGHTSEEING
+  RESTAURANT
+  ENTERTAINMENT
+  SHOPPING
+  TRANSPORTATION
+  ACCOMMODATION
+  ACTIVITY
+  MUSEUM
+  PARK
+  BEACH
+  NIGHTLIFE
+  CULTURAL
+  ADVENTURE
+  WELLNESS
+  BUSINESS
+  OTHER
+}
+
+enum ItineraryStatus {
+  DRAFT
+  GENERATING
+  COMPLETED
+  SHARED
+  ARCHIVED
+  FAILED
+}
+
+enum FeedbackCategory {
+  ITINERARY_QUALITY
+  USER_EXPERIENCE
+  BUG_REPORT
+  FEATURE_REQUEST
+  GENERAL
+}
+
+enum PlanType {
+  FREE
+  BASIC
+  PREMIUM
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  CANCELED
+  PAST_DUE
+  UNPAID
+  TRIALING
+}
