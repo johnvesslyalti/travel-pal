@@ -59,7 +59,7 @@ export function Navbar() {
                 <div className="relative group">
                   <button className="flex items-center space-x-2 text-gray-700 hover:text-purple-600 transition-colors">
                     {session.user?.image ? (
-                      <Image src={session.user.image} alt="Profile" className="w-8 h-8 rounded-full" />
+                      <Image width={32} height={32} src={session.user.image} alt="Profile" className="w-8 h-8 rounded-full" />
                     ) : (
                       <User size={20} />
                     )}
