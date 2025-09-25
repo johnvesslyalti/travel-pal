@@ -72,7 +72,7 @@ export function Navbar() {
                       <span>Settings</span>
                     </Link>
                     <button
-                      onClick={() => signOut()}
+                      onClick={() => signOut({ callbackUrl: '/'})}
                       className="flex items-center space-x-2 px-4 py-2 text-gray-700 hover:bg-gray-50 w-full text-left"
                     >
                       <LogOut size={16} />
