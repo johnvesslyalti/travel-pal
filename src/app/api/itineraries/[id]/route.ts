@@ -34,7 +34,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
         user: {
           select: {
             name: true,
-            avatar: true
+            image: true
           }
         }
       }

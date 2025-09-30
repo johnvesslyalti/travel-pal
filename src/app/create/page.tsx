@@ -77,7 +77,6 @@ export default function CreateTrip() {
 
   const [errors, setErrors] = useState<Record<string, string>>({});
 
-  // ✅ Generic handler – no `any`
   function handleInputChange<K extends keyof TripFormData>(
     field: K,
     value: TripFormData[K]
