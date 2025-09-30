@@ -172,7 +172,7 @@ export default function CreateTrip() {
           </p>
         </div>
 
-        <Card className="p-8">
+        <Card className="p-8 text-black">
           <form onSubmit={handleSubmit} className="space-y-8">
             {/* Destination & Dates */}
             <div className="grid md:grid-cols-3 gap-6">
