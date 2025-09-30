@@ -11,7 +11,7 @@ interface RouteParams {
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
     const session = await auth()
-    const itineraryId = params.id
+    const { id: itineraryId } = await params
 
     // Check if public or user owns it
     const itinerary = await prisma.itinerary.findFirst({
