@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/prisma'
 import { auth } from '@/auth'
 
 // GET /api/analytics - Get user analytics

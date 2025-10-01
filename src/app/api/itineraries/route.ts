@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/prisma'
 import { ItineraryGenerator, ItineraryRequest } from '@/lib/utils/itinerary-generator'
 import { createItinerarySchema } from '@/lib/utils/validation'
 import { ZodError } from 'zod'

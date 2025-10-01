@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/prisma'
 import { nanoid } from 'nanoid'
 import { auth } from '@/auth'
 

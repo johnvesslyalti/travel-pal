@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/db'
+import { prisma } from '@/prisma'
 import { feedbackSchema } from '@/lib/utils/validation'
 import { auth } from '@/auth'
 
