@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { updateItinerarySchema } from '@/lib/utils/validation'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 interface RouteParams {
   params: { id: string }
@@ -10,7 +11,7 @@ interface RouteParams {
 // GET /api/itineraries/[id] - Get specific itinerary
 export async function GET(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     const { id: itineraryId } = await params
 
     // Check if public or user owns it
@@ -54,7 +55,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
 // PUT /api/itineraries/[id] - Update itinerary
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -97,7 +98,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 // DELETE /api/itineraries/[id] - Delete itinerary
 export async function DELETE(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }

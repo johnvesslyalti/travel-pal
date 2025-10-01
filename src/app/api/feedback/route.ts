@@ -1,30 +1,34 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { feedbackSchema } from '@/lib/utils/validation'
-import { auth } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { feedbackSchema } from "@/lib/utils/validation";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 // POST /api/feedback - Submit feedback
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json()
-    const validatedData = feedbackSchema.parse(body)
+    const body = await request.json();
+    const validatedData = feedbackSchema.parse(body);
 
     // Verify itinerary ownership if provided
     if (validatedData.itineraryId) {
       const itinerary = await prisma.itinerary.findFirst({
         where: {
           id: validatedData.itineraryId,
-          userId: session.user.id
-        }
-      })
+          userId: session.user.id,
+        },
+      });
 
       if (!itinerary) {
-        return NextResponse.json({ error: 'Itinerary not found' }, { status: 404 })
+        return NextResponse.json(
+          { error: "Itinerary not found" },
+          { status: 404 }
+        );
       }
     }
 
@@ -39,12 +43,15 @@ export async function POST(request: NextRequest) {
         usability: validatedData.usability,
         accuracy: validatedData.accuracy,
         improvements: validatedData.improvements || [],
-      }
-    })
+      },
+    });
 
-    return NextResponse.json(feedback, { status: 201 })
+    return NextResponse.json(feedback, { status: 201 });
   } catch (error) {
-    console.error('Error submitting feedback:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Error submitting feedback:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

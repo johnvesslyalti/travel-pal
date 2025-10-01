@@ -1,6 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -19,12 +16,10 @@ model User {
   email         String           @unique
   name          String?
   image         String?
-  emailVerified Boolean
+  emailVerified Boolean          @default(false) // mapped from datetime → boolean
   createdAt     DateTime         @default(now())
   updatedAt     DateTime         @updatedAt
-  // User preferences
   preferences   UserPreferences?
-  // Relationships
   accounts      Account[]
   sessions      Session[]
   itineraries   Itinerary[]
@@ -35,52 +30,36 @@ model User {
 }
 
 model Account {
-  id                String  @id @default(cuid())
-  userId            String  @map("user_id")
-  type              String
-  provider          String
-  providerAccountId String  @map("provider_account_id")
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
-  expires_at        Int?
-  token_type        String?
-  scope             String?
-  id_token          String? @db.Text
-  session_state     String?
+  id                    String   @id @default(cuid())
+  userId                String   @map("user_id")
+  providerId            String?   @map("provider") // mapped
+  accountId             String?   @map("providerAccountId") // mapped
+  refreshToken          String?  @map("refresh_token")
+  accessToken           String?  @map("access_token")
+  accessTokenExpiresAt  DateTime? @map("expires_at") // mapped from int → datetime
+  idToken               String?  @map("id_token")
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @default(now()) @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  accountId             String
-  providerId            String
-  accessToken           String?
-  refreshToken          String?
-  idToken               String?
-  accessTokenExpiresAt  DateTime?
-  refreshTokenExpiresAt DateTime?
-  password              String?
-  createdAt             DateTime  @default(now())
-  updatedAt             DateTime  @updatedAt
-
-  @@unique([provider, providerAccountId])
+  @@unique([providerId, accountId])
   @@map("accounts")
 }
 
 model Session {
-  id           String   @id @default(cuid())
-  sessionToken String   @unique @map("session_token")
-  userId       String   @map("user_id")
-  expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  expiresAt DateTime
-  token     String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id        String   @id @default(cuid())
+  token     String?   @map("sessionToken")
+  expiresAt DateTime? @map("expires")
+  userId    String?  @map("user_id")
+  user      User?     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime? @default(now())
+  updatedAt DateTime? @default(now()) @updatedAt
   ipAddress String?
   userAgent String?
 
-  @@map("sessions")
   @@unique([token])
+  @@map("sessions")
 }
 
 model VerificationToken {
@@ -99,19 +78,17 @@ model VerificationToken {
 model UserPreferences {
   id                   String      @id @default(cuid())
   userId               String      @unique @map("user_id")
-  // Travel preferences
   preferredBudget      BudgetRange @default(MID_RANGE)
   travelStyle          TravelStyle @default(BALANCED)
-  interests            String[] // Array of interest categories
-  dietaryRequirements  String[] // vegetarian, vegan, gluten-free, etc.
-  mobilityRequirements String[] // wheelchair accessible, etc.
+  interests            String[]
+  dietaryRequirements  String[]
+  mobilityRequirements String[]
   preferredLanguage    String      @default("en")
   currency             String      @default("USD")
-  // Notification preferences
   emailNotifications   Boolean     @default(true)
   pushNotifications    Boolean     @default(true)
   createdAt            DateTime    @default(now())
-  updatedAt            DateTime    @updatedAt
+  updatedAt            DateTime    @default(now()) @updatedAt
   user                 User        @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("user_preferences")
@@ -124,38 +101,30 @@ model UserPreferences {
 model Itinerary {
   id             String          @id @default(cuid())
   userId         String          @map("user_id")
-  // Basic trip info
   title          String
   destination    String
   country        String?
   city           String?
-  coordinates    String? // "lat,lng" format
-  // Trip dates
+  coordinates    String?
   startDate      DateTime        @map("start_date")
   endDate        DateTime        @map("end_date")
-  duration       Int // days
-  // Trip details
+  duration       Int
   budget         Float?
   budgetRange    BudgetRange     @default(MID_RANGE)
   groupSize      Int             @default(1)
   travelStyle    TravelStyle     @default(BALANCED)
-  interests      String[] // categories
-  // AI generation data
+  interests      String[]
   aiPrompt       String?         @db.Text
   aiModel        String?         @default("gemini-pro")
-  generationTime Int? // milliseconds
-  // Itinerary content
+  generationTime Int?
   summary        String?         @db.Text
-  highlights     String[] // key attractions/activities
+  highlights     String[]
   estimatedCost  Float?
-  // Status
   status         ItineraryStatus @default(DRAFT)
   isPublic       Boolean         @default(false)
-  shareToken     String?         @unique // for public sharing
-  // Metadata
+  shareToken     String?         @unique
   createdAt      DateTime        @default(now())
-  updatedAt      DateTime        @updatedAt
-  // Relationships
+  updatedAt      DateTime        @default(now()) @updatedAt
   user           User            @relation(fields: [userId], references: [id], onDelete: Cascade)
   days           ItineraryDay[]
   feedback       Feedback[]
@@ -166,19 +135,14 @@ model Itinerary {
 model ItineraryDay {
   id            String     @id @default(cuid())
   itineraryId   String     @map("itinerary_id")
-  // Day info
-  dayNumber     Int // 1, 2, 3, etc.
+  dayNumber     Int
   date          DateTime
-  title         String? // "Day 1: Exploring Historic Tokyo"
+  title         String?
   summary       String?    @db.Text
-  // Daily budget
   estimatedCost Float?
-  // Weather info (cached from API)
-  weather       Json? // weather data for the day
-  // Metadata
+  weather       Json?
   createdAt     DateTime   @default(now())
-  updatedAt     DateTime   @updatedAt
-  // Relationships
+  updatedAt     DateTime   @default(now()) @updatedAt
   itinerary     Itinerary  @relation(fields: [itineraryId], references: [id], onDelete: Cascade)
   activities    Activity[]
 
@@ -187,40 +151,32 @@ model ItineraryDay {
 }
 
 model Activity {
-  id              String           @id @default(cuid())
-  dayId           String           @map("day_id")
-  // Activity details
+  id              String       @id @default(cuid())
+  dayId           String       @map("day_id")
   title           String
-  description     String?          @db.Text
+  description     String?      @db.Text
   category        ActivityCategory
-  // Location
-  location        String? // address or location name
-  coordinates     String? // "lat,lng"
-  placeId         String? // Google Places ID
-  // Timing
-  startTime       String? // "09:00"
-  endTime         String? // "11:00"
-  duration        Int? // minutes
-  order           Int // order within the day
-  // Cost & Booking
+  location        String?
+  coordinates     String?
+  placeId         String?
+  startTime       String?
+  endTime         String?
+  duration        Int?
+  order           Int
   estimatedCost   Float?
-  currency        String           @default("USD")
+  currency        String       @default("USD")
   bookingUrl      String?
-  bookingRequired Boolean          @default(false)
-  // Additional info
-  tips            String?          @db.Text
+  bookingRequired Boolean      @default(false)
+  tips            String?      @db.Text
   website         String?
   phone           String?
-  rating          Float? // from Google Places or similar
+  rating          Float?
   reviewCount     Int?
-  // Status
-  isCompleted     Boolean          @default(false)
-  userNotes       String?          @db.Text
-  // Metadata
-  createdAt       DateTime         @default(now())
-  updatedAt       DateTime         @updatedAt
-  // Relationships
-  day             ItineraryDay     @relation(fields: [dayId], references: [id], onDelete: Cascade)
+  isCompleted     Boolean      @default(false)
+  userNotes       String?      @db.Text
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @default(now()) @updatedAt
+  day             ItineraryDay @relation(fields: [dayId], references: [id], onDelete: Cascade)
 
   @@map("activities")
 }
@@ -233,20 +189,15 @@ model Feedback {
   id           String           @id @default(cuid())
   userId       String           @map("user_id")
   itineraryId  String?          @map("itinerary_id")
-  // Feedback content
-  rating       Int // 1-5 stars
+  rating       Int
   comment      String?          @db.Text
   category     FeedbackCategory
-  // Specific feedback areas
-  aiQuality    Int? // 1-5 rating for AI recommendations
-  usability    Int? // 1-5 rating for ease of use
-  accuracy     Int? // 1-5 rating for information accuracy
-  // Suggestions
-  improvements String[] // areas for improvement
-  // Metadata
+  aiQuality    Int?
+  usability    Int?
+  accuracy     Int?
+  improvements String[]
   createdAt    DateTime         @default(now())
-  updatedAt    DateTime         @updatedAt
-  // Relationships
+  updatedAt    DateTime         @default(now()) @updatedAt
   user         User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   itinerary    Itinerary?       @relation(fields: [itineraryId], references: [id], onDelete: SetNull)
 
@@ -260,24 +211,18 @@ model Feedback {
 model Subscription {
   id                   String             @id @default(cuid())
   userId               String             @map("user_id")
-  // Subscription details
   planType             PlanType
   status               SubscriptionStatus
-  // Billing
   stripeCustomerId     String?            @unique @map("stripe_customer_id")
   stripeSubscriptionId String?            @unique @map("stripe_subscription_id")
   stripePriceId        String?            @map("stripe_price_id")
-  // Usage tracking
   itinerariesUsed      Int                @default(0)
   itinerariesLimit     Int                @default(5)
-  // Dates
   startDate            DateTime           @default(now()) @map("start_date")
   endDate              DateTime?          @map("end_date")
   canceledAt           DateTime?          @map("canceled_at")
-  // Metadata
   createdAt            DateTime           @default(now())
-  updatedAt            DateTime           @updatedAt
-  // Relationships
+  updatedAt            DateTime           @default(now()) @updatedAt
   user                 User               @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("subscriptions")
@@ -289,17 +234,14 @@ model Subscription {
 
 model CachedLocation {
   id           String   @id @default(cuid())
-  // Location identifiers
   name         String
   country      String
   city         String?
   placeId      String?  @unique
-  coordinates  String? // "lat,lng"
-  // Cached data
-  placesData   Json? // Google Places API response
-  weatherData  Json? // Weather API response
-  popularTimes Json? // Popular times data
-  // Cache metadata
+  coordinates  String?
+  placesData   Json?
+  weatherData  Json?
+  popularTimes Json?
   lastUpdated  DateTime @default(now())
   expiresAt    DateTime
   hitCount     Int      @default(0)
@@ -310,19 +252,15 @@ model CachedLocation {
 model AiUsage {
   id             String   @id @default(cuid())
   userId         String?  @map("user_id")
-  // Request details
-  model          String // gemini-pro, gpt-3.5-turbo, etc.
+  model          String
   promptTokens   Int?
   responseTokens Int?
   totalTokens    Int?
-  // Cost tracking
-  cost           Float? // in USD
-  // Request metadata
-  endpoint       String? // which API endpoint was used
-  responseTime   Int? // milliseconds
+  cost           Float?
+  endpoint       String?
+  responseTime   Int?
   success        Boolean  @default(true)
   errorMessage   String?
-  // Metadata
   createdAt      DateTime @default(now())
 
   @@map("ai_usage")
@@ -333,11 +271,11 @@ model AiUsage {
 // =============================================
 
 enum BudgetRange {
-  ULTRA_BUDGET // < $50/day
-  BUDGET // $50-100/day
-  MID_RANGE // $100-200/day
-  LUXURY // $200-500/day
-  ULTRA_LUXURY // > $500/day
+  ULTRA_BUDGET
+  BUDGET
+  MID_RANGE
+  LUXURY
+  ULTRA_LUXURY
 }
 
 enum TravelStyle {

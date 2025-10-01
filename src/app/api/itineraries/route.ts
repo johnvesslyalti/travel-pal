@@ -5,13 +5,14 @@ import { createItinerarySchema } from '@/lib/utils/validation'
 import { ZodError } from 'zod'
 import { auth } from '@/lib/auth'
 import { Prisma, ActivityCategory, ItineraryStatus } from '@prisma/client'
+import { headers } from 'next/headers'
 
 const validCategories: ActivityCategory[] = ['SIGHTSEEING','RESTAURANT','ENTERTAINMENT','ACTIVITY','OTHER']
 
 // GET /api/itineraries - Get user's itineraries
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     const { searchParams } = new URL(request.url)
@@ -53,7 +54,7 @@ export async function GET(request: NextRequest) {
 // POST /api/itineraries - Create new itinerary
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
     // Check subscription limits

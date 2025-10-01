@@ -5,24 +5,20 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { signIn } from "next-auth/react";
 import { Play, Menu, X } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import Image from "next/image";
+import { FaGoogle } from "react-icons/fa";
 
 export default function LandingPage() {
-  const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
   const handleLogin = async () => {
     await authClient.signIn.social({
-        provider: "google",
-        callbackURL: "/dashboard"
-    }).finally(() => {
-        setLoading(false);
-    })
-  }
+      provider: "google",
+      callbackURL: "/dashboard",
+    });
+  };
 
   // Scroll effect for nav
   useEffect(() => {
@@ -30,8 +26,6 @@ export default function LandingPage() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
-
-  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-white">
@@ -129,18 +123,11 @@ export default function LandingPage() {
           {/* Direct Social Login Buttons */}
           <div className="mt-8 flex flex-col md:flex-row gap-4">
             <button
-              onClick={() =>handleLogin()}
+              onClick={() => handleLogin()}
               className="flex items-center justify-center gap-2 bg-white text-gray-900 px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
             >
-              <Image src="/google-icon.svg" alt="Google" className="w-5 h-5" />
+              <FaGoogle className="w-5 h-5" />
               Continue with Google
-            </button>
-            <button
-              onClick={() => signIn("github")}
-              className="flex items-center justify-center gap-2 bg-gray-800 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
-            >
-              <Image src="/github-icon.svg" alt="GitHub" className="w-5 h-5" />
-              Continue with GitHub
             </button>
           </div>
 

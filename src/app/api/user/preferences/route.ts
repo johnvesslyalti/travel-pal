@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 import { auth } from '@/lib/auth'
+import { headers } from 'next/headers'
 
 const preferencesSchema = z.object({
   preferredBudget: z.enum(['ULTRA_BUDGET', 'BUDGET', 'MID_RANGE', 'LUXURY', 'ULTRA_LUXURY']),
@@ -18,7 +19,7 @@ const preferencesSchema = z.object({
 // GET /api/user/preferences - Get user preferences
 export async function GET() {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
@@ -37,7 +38,7 @@ export async function GET() {
 // POST /api/user/preferences - Update user preferences
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() })
     if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
