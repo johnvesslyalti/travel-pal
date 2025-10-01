@@ -1,7 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { z } from 'zod'
-import { auth } from '@/lib/auth'
+import { NextRequest, NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma";
+import { z } from "zod";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
 const updateActivitySchema = z.object({
   title: z.string().optional(),
@@ -11,23 +12,23 @@ const updateActivitySchema = z.object({
   estimatedCost: z.number().optional(),
   userNotes: z.string().optional(),
   isCompleted: z.boolean().optional(),
-})
+});
 
 interface RouteParams {
-  params: { id: string }
+  params: { id: string };
 }
 
 // PUT /api/activities/[id] - Update activity
 export async function PUT(request: NextRequest, { params }: RouteParams) {
   try {
-    const session = await auth()
+    const session = await auth.api.getSession({ headers: await headers() });
     if (!session?.user?.id) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const activityId = params.id
-    const body = await request.json()
-    const validatedData = updateActivitySchema.parse(body)
+    const activityId = params.id;
+    const body = await request.json();
+    const validatedData = updateActivitySchema.parse(body);
 
     // Verify user owns the itinerary containing this activity
     const activity = await prisma.activity.findFirst({
@@ -35,24 +36,30 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
       include: {
         day: {
           include: {
-            itinerary: true
-          }
-        }
-      }
-    })
+            itinerary: true,
+          },
+        },
+      },
+    });
 
     if (!activity || activity.day.itinerary.userId !== session.user.id) {
-      return NextResponse.json({ error: 'Activity not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: "Activity not found" },
+        { status: 404 }
+      );
     }
 
     const updated = await prisma.activity.update({
       where: { id: activityId },
-      data: validatedData
-    })
+      data: validatedData,
+    });
 
-    return NextResponse.json(updated)
+    return NextResponse.json(updated);
   } catch (error) {
-    console.error('Error updating activity:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    console.error("Error updating activity:", error);
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 }
+    );
   }
 }

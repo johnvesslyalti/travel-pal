@@ -1,12 +1,12 @@
 "use client"
 
 import { useState, useEffect } from 'react'
-import { useSession } from 'next-auth/react'
 import Link from 'next/link'
 import { Plus, MapPin, Calendar, Star, TrendingUp, Globe } from 'lucide-react'
 import { Layout } from '@/components/Layout/Layout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
+import { authClient } from '@/lib/auth-client'
 
 interface DashboardStats {
   totalItineraries: number
@@ -24,16 +24,16 @@ interface RecentActivity {
 }
 
 export default function Dashboard() {
-  const { data: session, status } = useSession()
+  const { data: session } = authClient.useSession()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {
-    if (status === 'authenticated') {
+    if (session?.user.emailVerified) {
       fetchDashboardData()
     }
-  }, [status])
+  }, [session])
 
   const fetchDashboardData = async () => {
     try {
