@@ -1,67 +1,46 @@
 // ==================================================
 // FILE: app/page.tsx
-// Main landing page with client-side session check
+// Landing page with direct social login
 // ==================================================
 "use client";
 
 import React, { useState, useEffect } from "react";
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import {
-  Play,
-  ArrowRight,
-  Menu,
-  X
-} from "lucide-react";
-
-// Custom hook to fetch session from API route
-function useSession() {
-  const [session, setSession] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    fetch("/api/auth/session")
-      .then((res) => res.json())
-      .then((data) => {
-        setSession(data?.user ?? null);
-        setLoading(false);
-      })
-      .catch(() => setLoading(false));
-  }, []);
-
-  return { session, loading };
-}
+import { signIn } from "next-auth/react";
+import { Play, Menu, X } from "lucide-react";
+import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 export default function LandingPage() {
-  const { session, loading } = useSession();
-  const router = useRouter();
+  const [loading, setLoading] = useState(true);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
 
-  // Redirect if logged in
-  useEffect(() => {
-    if (!loading && session) {
-      router.push("/dashboard");
-    }
-  }, [session, loading, router]);
+  const handleLogin = async () => {
+    await authClient.signIn.social({
+        provider: "google",
+        callbackURL: "/dashboard"
+    }).finally(() => {
+        setLoading(false);
+    })
+  }
 
-  // Scroll handler
+  // Scroll effect for nav
   useEffect(() => {
-    const handleScroll = () => {
-      setIsScrolled(window.scrollY > 50);
-    };
+    const handleScroll = () => setIsScrolled(window.scrollY > 50);
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  if (loading) return null; // Optional: show loader
+  if (loading) return null;
 
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
       <nav
         className={`fixed top-0 w-full z-50 transition-all duration-300 ${
-          isScrolled ? "bg-white/90 backdrop-blur-md shadow-lg" : "bg-transparent"
+          isScrolled
+            ? "bg-white/90 backdrop-blur-md shadow-lg"
+            : "bg-transparent"
         }`}
       >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -75,6 +54,7 @@ export default function LandingPage() {
               </span>
             </div>
 
+            {/* Desktop Nav - only product links */}
             <div className="hidden md:flex items-center space-x-8">
               <a
                 href="#features"
@@ -94,18 +74,9 @@ export default function LandingPage() {
               >
                 Pricing
               </a>
-              <Link href="/auth/signin">
-                <button className="text-gray-700 hover:text-purple-600 transition-colors font-medium">
-                  Sign In
-                </button>
-              </Link>
-              <Link href="/auth/signup">
-                <button className="bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transition-all duration-300 hover:scale-105">
-                  Get Started Free
-                </button>
-              </Link>
             </div>
 
+            {/* Mobile Menu Button */}
             <button
               className="md:hidden text-gray-700"
               onClick={() => setIsMenuOpen(!isMenuOpen)}
@@ -137,17 +108,6 @@ export default function LandingPage() {
               >
                 Pricing
               </a>
-              <Link
-                href="/auth/signin"
-                className="block text-gray-700 hover:text-purple-600 transition-colors font-medium"
-              >
-                Sign In
-              </Link>
-              <Link href="/auth/signup">
-                <button className="w-full bg-gradient-to-r from-purple-500 to-blue-500 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transition-all duration-300">
-                  Get Started Free
-                </button>
-              </Link>
             </div>
           </div>
         )}
@@ -155,8 +115,7 @@ export default function LandingPage() {
 
       {/* Hero Section */}
       <section className="pt-24 pb-12 min-h-screen flex items-center relative overflow-hidden bg-gradient-to-br from-purple-600 via-blue-600 to-indigo-700">
-        {/* ...rest of your hero, features, how-it-works, social proof, pricing, footer JSX */}
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
           <h1 className="text-white text-5xl md:text-7xl font-bold">
             Your Perfect Trip,
             <span className="block text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 to-orange-300">
@@ -166,22 +125,160 @@ export default function LandingPage() {
           <p className="text-white/90 mt-6 text-xl md:text-2xl">
             Transform your travel dreams into detailed itineraries with AI.
           </p>
-          <div className="mt-8 flex gap-4">
-            <Link href="/auth/signup">
-              <button className="group bg-white text-purple-600 px-8 py-4 rounded-full font-semibold text-lg hover:bg-gray-50 transition-all duration-300 hover:scale-105 shadow-2xl flex items-center">
-                🚀 Start Planning Free
-                <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
-              </button>
-            </Link>
-            <button className="bg-white/10 backdrop-blur-md text-white px-8 py-4 rounded-full font-semibold text-lg hover:bg-white/20 transition-all duration-300 border border-white/20 flex items-center">
-              <Play className="w-5 h-5 mr-2" />
-              Watch Demo
+
+          {/* Direct Social Login Buttons */}
+          <div className="mt-8 flex flex-col md:flex-row gap-4">
+            <button
+              onClick={() =>handleLogin()}
+              className="flex items-center justify-center gap-2 bg-white text-gray-900 px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
+            >
+              <Image src="/google-icon.svg" alt="Google" className="w-5 h-5" />
+              Continue with Google
             </button>
+            <button
+              onClick={() => signIn("github")}
+              className="flex items-center justify-center gap-2 bg-gray-800 text-white px-8 py-4 rounded-full font-semibold hover:shadow-lg transition-all duration-300"
+            >
+              <Image src="/github-icon.svg" alt="GitHub" className="w-5 h-5" />
+              Continue with GitHub
+            </button>
+          </div>
+
+          {/* Optional Demo Button */}
+          <button className="mt-4 md:mt-0 md:ml-4 flex items-center gap-2 bg-white/10 backdrop-blur-md text-white px-8 py-4 rounded-full font-semibold hover:bg-white/20 transition-all duration-300 border border-white/20">
+            <Play className="w-5 h-5" />
+            Watch Demo
+          </button>
+        </div>
+
+        {/* Hero Background Shapes */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="absolute -top-32 -left-32 w-96 h-96 bg-purple-500 rounded-full opacity-40 blur-3xl animate-pulse"></div>
+          <div className="absolute -bottom-32 -right-32 w-96 h-96 bg-yellow-400 rounded-full opacity-40 blur-3xl animate-pulse"></div>
+        </div>
+      </section>
+
+      {/* Features Section */}
+      <section id="features" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">
+            Features
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="bg-gray-50 p-8 rounded-2xl shadow hover:shadow-lg transition-all">
+              <h3 className="text-xl font-semibold mb-2">
+                AI-Powered Itineraries
+              </h3>
+              <p className="text-gray-600">
+                Plan your trips in seconds with AI-generated detailed
+                itineraries.
+              </p>
+            </div>
+            <div className="bg-gray-50 p-8 rounded-2xl shadow hover:shadow-lg transition-all">
+              <h3 className="text-xl font-semibold mb-2">
+                Custom Recommendations
+              </h3>
+              <p className="text-gray-600">
+                Get suggestions for activities, hotels, and local experiences
+                tailored for you.
+              </p>
+            </div>
+            <div className="bg-gray-50 p-8 rounded-2xl shadow hover:shadow-lg transition-all">
+              <h3 className="text-xl font-semibold mb-2">Seamless Booking</h3>
+              <p className="text-gray-600">
+                Book flights, hotels, and activities directly from our platform.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
-      {/* You can copy-paste all remaining sections here (Features, How It Works, Social Proof, Pricing, Footer) */}
+      {/* How it Works Section */}
+      <section id="how-it-works" className="py-20 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">
+            How It Works
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8 text-center">
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">
+                1. Choose Destination
+              </h3>
+              <p className="text-gray-600">
+                Select your desired city or country to start planning.
+              </p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">
+                2. AI Generates Plan
+              </h3>
+              <p className="text-gray-600">
+                Our AI creates a personalized travel plan within seconds.
+              </p>
+            </div>
+            <div className="p-6">
+              <h3 className="text-xl font-semibold mb-2">3. Enjoy Trip</h3>
+              <p className="text-gray-600">
+                Follow your plan, explore, and have a seamless travel
+                experience.
+              </p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Pricing Section */}
+      <section id="pricing" className="py-20 bg-white">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <h2 className="text-4xl font-bold text-gray-900 text-center mb-12">
+            Pricing
+          </h2>
+          <div className="grid md:grid-cols-3 gap-8">
+            <div className="p-8 bg-gray-50 rounded-2xl shadow hover:shadow-lg transition-all text-center">
+              <h3 className="text-xl font-semibold mb-4">Free</h3>
+              <p className="text-gray-600 mb-4">
+                Basic AI itineraries for casual travelers.
+              </p>
+              <span className="text-3xl font-bold mb-4 block">$0</span>
+            </div>
+            <div className="p-8 bg-purple-600 text-white rounded-2xl shadow-lg text-center transform scale-105">
+              <h3 className="text-xl font-semibold mb-4">Pro</h3>
+              <p className="mb-4">
+                Advanced itineraries, recommendations, and booking options.
+              </p>
+              <span className="text-3xl font-bold mb-4 block">$19/mo</span>
+            </div>
+            <div className="p-8 bg-gray-50 rounded-2xl shadow hover:shadow-lg transition-all text-center">
+              <h3 className="text-xl font-semibold mb-4">Enterprise</h3>
+              <p className="text-gray-600 mb-4">
+                Tailored travel planning solutions for businesses.
+              </p>
+              <span className="text-3xl font-bold mb-4 block">Contact Us</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Footer */}
+      <footer className="bg-gray-900 text-white py-12">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col md:flex-row justify-between items-center gap-6">
+          <span className="font-bold text-xl">Travel Pal</span>
+          <div className="flex gap-6">
+            <a href="#" className="hover:text-purple-500 transition-colors">
+              About
+            </a>
+            <a href="#" className="hover:text-purple-500 transition-colors">
+              Contact
+            </a>
+            <a href="#" className="hover:text-purple-500 transition-colors">
+              Privacy
+            </a>
+          </div>
+          <span>
+            © {new Date().getFullYear()} Travel Pal. All rights reserved.
+          </span>
+        </div>
+      </footer>
     </div>
   );
 }
