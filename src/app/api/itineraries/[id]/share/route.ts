@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/prisma'
+import { prisma } from '@/lib/prisma'
 import { nanoid } from 'nanoid'
-import { auth } from '@/auth'
+import { auth } from '@/lib/auth'
 
 interface RouteParams {
   params: { id: string }

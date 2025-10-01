@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/prisma'
+import { prisma } from '@/lib/prisma'
 import { ItineraryGenerator, ItineraryRequest } from '@/lib/utils/itinerary-generator'
 import { createItinerarySchema } from '@/lib/utils/validation'
 import { ZodError } from 'zod'
-import { auth } from '@/auth'
+import { auth } from '@/lib/auth'
 import { Prisma, ActivityCategory, ItineraryStatus } from '@prisma/client'
 
 const validCategories: ActivityCategory[] = ['SIGHTSEEING','RESTAURANT','ENTERTAINMENT','ACTIVITY','OTHER']

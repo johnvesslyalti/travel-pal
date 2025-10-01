@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/prisma'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
-import { auth } from '@/auth'
+import { auth } from '@/lib/auth'
 
 const preferencesSchema = z.object({
   preferredBudget: z.enum(['ULTRA_BUDGET', 'BUDGET', 'MID_RANGE', 'LUXURY', 'ULTRA_LUXURY']),
