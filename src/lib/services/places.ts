@@ -8,60 +8,101 @@ export interface PlaceData {
       lng: number
     }
   }
-  rating?: number
-  user_ratings_total?: number
   types: string[]
-  photos?: Array<{
-    photo_reference: string
-  }>
+}
+
+// Nominatim search API response type
+interface NominatimPlace {
+  osm_id: number
+  display_name: string
+  lat: string
+  lon: string
+  type?: string
+  address?: Record<string, string>
+}
+
+// Nominatim details API response type
+interface NominatimDetails {
+  osm_id: number
+  localname?: string
+  name: string
+  display_name: string
+  centroid?: {
+    type: string
+    coordinates: [number, number]
+  }
+  category?: string
 }
 
 export class PlacesService {
-  private apiKey: string
-  private baseUrl = 'https://maps.googleapis.com/maps/api/place'
+  private baseUrl = 'https://nominatim.openstreetmap.org/search'
 
   constructor() {
-    this.apiKey = process.env.GOOGLE_PLACES_API_KEY!
+    // No API key required for Nominatim
   }
 
+  /**
+   * Search for places by name
+   */
   async searchPlaces(query: string, location?: string): Promise<PlaceData[]> {
     try {
+      const q = location ? `${query}, ${location}` : query
       const params = new URLSearchParams({
-        query,
-        key: this.apiKey,
-        ...(location && { location, radius: '50000' })
+        q,
+        format: 'json',
+        addressdetails: '1',
+        limit: '10'
       })
 
-      const response = await fetch(`${this.baseUrl}/textsearch/json?${params}`)
-      const data = await response.json()
+      const response = await fetch(`${this.baseUrl}?${params}`)
+      const data = (await response.json()) as NominatimPlace[]
 
-      if (data.status !== 'OK') {
-        throw new Error(`Places API error: ${data.status}`)
-      }
-
-      return data.results || []
+      return data.map((place) => ({
+        place_id: place.osm_id.toString(),
+        name: place.display_name.split(',')[0].trim(),
+        formatted_address: place.display_name,
+        geometry: {
+          location: {
+            lat: parseFloat(place.lat),
+            lng: parseFloat(place.lon)
+          }
+        },
+        types: place.type ? [place.type] : []
+      }))
     } catch (error) {
       console.error('Places API error:', error)
       throw new Error('Failed to fetch places data')
     }
   }
 
-  async getPlaceDetails(placeId: string): Promise<PlaceData> {
+  /**
+   * Get place details (approximated using the same search API)
+   */
+  async getPlaceDetails(placeId: string, osmType: 'N' | 'W' | 'R'): Promise<PlaceData> {
     try {
-      const params = new URLSearchParams({
-        place_id: placeId,
-        key: this.apiKey,
-        fields: 'place_id,name,formatted_address,geometry,rating,user_ratings_total,types,photos'
-      })
+      const url = new URL('https://nominatim.openstreetmap.org/details.php')
+      url.searchParams.set('osmtype', osmType)
+      url.searchParams.set('osmid', placeId)
+      url.searchParams.set('format', 'json')
 
-      const response = await fetch(`${this.baseUrl}/details/json?${params}`)
-      const data = await response.json()
+      const response = await fetch(url.toString())
+      const data = (await response.json()) as NominatimDetails
 
-      if (data.status !== 'OK') {
-        throw new Error(`Places API error: ${data.status}`)
+      const coords = data.centroid?.coordinates
+      if (!coords) throw new Error('Coordinates not available for this place')
+
+      return {
+        place_id: data.osm_id.toString(),
+        name: data.localname || data.name,
+        formatted_address: data.display_name,
+        geometry: {
+          location: {
+            lat: coords[1],
+            lng: coords[0]
+          }
+        },
+        types: data.category ? [data.category] : []
       }
-
-      return data.result
     } catch (error) {
       console.error('Places API error:', error)
       throw new Error('Failed to fetch place details')
