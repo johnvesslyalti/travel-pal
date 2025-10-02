@@ -103,7 +103,7 @@ export async function DELETE(request: NextRequest, { params }: RouteParams) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const itineraryId = params.id
+    const { id: itineraryId } = await params
 
     // Verify ownership
     const existing = await prisma.itinerary.findFirst({
