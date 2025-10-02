@@ -66,7 +66,7 @@ export default function Dashboard() {
 
 
   return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
+      <div className="max-w-7xl mx-auto px-4 py-15">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
           <div>
