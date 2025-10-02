@@ -3,7 +3,6 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { MapPin, Users, Heart, Loader2 } from "lucide-react";
-import { Layout } from "@/components/Layout/Layout";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
 import { Card } from "@/components/ui/Card";
@@ -159,7 +158,6 @@ export default function CreateTrip() {
   };
 
   return (
-    <Layout>
       <div className="max-w-4xl mx-auto px-4 py-8">
         <div className="text-center mb-8">
           <h1 className="text-4xl font-bold text-gray-900 mb-4">
@@ -350,6 +348,5 @@ export default function CreateTrip() {
           </form>
         </Card>
       </div>
-    </Layout>
   );
 }

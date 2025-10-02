@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { Plus, MapPin, Calendar, Star, TrendingUp, Globe } from 'lucide-react'
-import { Layout } from '@/components/Layout/Layout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { authClient } from '@/lib/auth-client'
@@ -24,7 +23,7 @@ interface RecentActivity {
 }
 
 export default function Dashboard() {
-  const { data: session } = authClient.useSession()
+  const { data: session, isPending } = authClient.useSession()
   const [stats, setStats] = useState<DashboardStats | null>(null)
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([])
   const [loading, setLoading] = useState(true)
@@ -50,25 +49,23 @@ export default function Dashboard() {
     }
   }
 
-  if (status === 'loading' || loading) {
+  if (isPending) {
     return (
-      <Layout>
-        <div className="max-w-7xl mx-auto px-4 py-8">
-          <div className="animate-pulse space-y-8">
-            <div className="h-8 bg-gray-200 rounded w-1/3"></div>
-            <div className="grid md:grid-cols-4 gap-6">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
-              ))}
-            </div>
+      <div className="max-w-7xl mx-auto px-4 py-8">
+        <div className="animate-pulse space-y-8">
+          <div className="h-8 bg-gray-200 rounded w-1/3"></div>
+          <div className="grid md:grid-cols-4 gap-6">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="h-32 bg-gray-200 rounded-xl"></div>
+            ))}
           </div>
         </div>
-      </Layout>
+      </div>
     )
   }
 
+
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -246,6 +243,5 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }

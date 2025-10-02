@@ -14,7 +14,6 @@ import {
   Cloud,
   Thermometer
 } from 'lucide-react'
-import { Layout } from '@/components/Layout/Layout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
@@ -185,7 +184,6 @@ export default function ItineraryDetail() {
 
   if (loading) {
     return (
-      <Layout>
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-8">
             <div className="h-12 bg-gray-200 rounded w-1/2"></div>
@@ -197,13 +195,11 @@ export default function ItineraryDetail() {
             </div>
           </div>
         </div>
-      </Layout>
     )
   }
 
   if (!itinerary) {
     return (
-      <Layout>
         <div className="max-w-6xl mx-auto px-4 py-8">
           <div className="text-center py-16">
             <h2 className="text-2xl font-bold text-gray-900 mb-4">
@@ -215,7 +211,6 @@ export default function ItineraryDetail() {
             </p>
           </div>
         </div>
-      </Layout>
     )
   }
 
@@ -231,7 +226,6 @@ export default function ItineraryDetail() {
     totalActivities > 0 ? (completedActivities / totalActivities) * 100 : 0
 
   return (
-    <Layout>
       <div className="max-w-6xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="mb-8">
@@ -530,6 +524,5 @@ export default function ItineraryDetail() {
           </div>
         </Modal>
       </div>
-    </Layout>
   )
 }

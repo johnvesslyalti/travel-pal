@@ -3,7 +3,6 @@
 import { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { MapPin, Calendar, DollarSign, Share2, Trash2, Plus, Filter } from 'lucide-react'
-import { Layout } from '@/components/Layout/Layout'
 import { Button } from '@/components/ui/Button'
 import { Card } from '@/components/ui/Card'
 import { Modal } from '@/components/ui/Modal'
@@ -98,7 +97,6 @@ export default function Itineraries() {
 
   if (loading) {
     return (
-      <Layout>
         <div className="max-w-7xl mx-auto px-4 py-8">
           <div className="animate-pulse space-y-6">
             {[...Array(3)].map((_, i) => (
@@ -106,12 +104,10 @@ export default function Itineraries() {
             ))}
           </div>
         </div>
-      </Layout>
     )
   }
 
   return (
-    <Layout>
       <div className="max-w-7xl mx-auto px-4 py-8">
         {/* Header */}
         <div className="flex justify-between items-center mb-8">
@@ -257,6 +253,5 @@ export default function Itineraries() {
           </div>
         </Modal>
       </div>
-    </Layout>
   )
 }

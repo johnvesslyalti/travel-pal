@@ -4,7 +4,6 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import Image from 'next/image'
 import { User, Settings, Bell, CreditCard } from 'lucide-react'
-import { Layout } from '@/components/Layout/Layout'
 import { Button } from '@/components/ui/Button'
 import { Input } from '@/components/ui/Input'
 import { Card } from '@/components/ui/Card'
@@ -66,7 +65,6 @@ export default function Profile() {
   ]
 
   return (
-    <Layout>
       <div className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Settings</h1>
@@ -160,6 +158,5 @@ export default function Profile() {
           </div>
         </div>
       </div>
-    </Layout>
   )
 }
